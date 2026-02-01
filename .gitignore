@@ -1,0 +1,55 @@
+# ESP8266 RTOS SDK Build Files
+build/
+*.bin
+*.elf
+*.map
+
+# SDK Configuration
+sdkconfig.old
+.config.old
+
+# Python Virtual Environment
+.venv/
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Editor and IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled Object Files
+*.o
+*.a
+*.so
+*.d
+
+# Dependencies
+dependencies.lock
+
+# Flash Download Tool
+flash_download_tool/
+
+# Logs
+*.log
+
+# Temporary Files
+*.tmp
+*.bak
+*.cache
+
+# OS Generated Files
+Thumbs.db
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Component Build Artifacts
+components/**/build/
+
