@@ -18,6 +18,15 @@
 
 static const char *TAG = "DHT22-API";
 
+void handle_nvs_error(void) {
+    if (nvs_flash_init() != ESP_OK) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ESP_ERROR_CHECK(nvs_flash_init());
+    }
+
+    return;
+}
+
 void setup_wifi(void) {
     ESP_LOGI(TAG, "Initializing WiFi...");
 
@@ -118,10 +127,7 @@ void wifi_reconnect_task(void *pvParameters) {
 void app_main(void) {
     ESP_LOGI(TAG, "Starting DHT22 API application...");
 
-    if (nvs_flash_init() != ESP_OK) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ESP_ERROR_CHECK(nvs_flash_init());
-    }
+    handle_nvs_error();
 
     ESP_LOGI(TAG, "Initializing TCP/IP adapter...");
     tcpip_adapter_init();
