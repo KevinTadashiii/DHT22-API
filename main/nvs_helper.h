@@ -1,0 +1,1 @@
+void handle_nvs_error(const char *TAG);

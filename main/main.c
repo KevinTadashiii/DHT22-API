@@ -1,133 +1,76 @@
-#include <stdio.h>
-#include <string.h>
-
-#include <dht/dht.h>
-
+// ESP-IDF components
 #include <esp_err.h>
 #include <esp_event.h>
 #include <esp_http_server.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 
+// FreeRTOS
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#include <nvs_flash.h>
+// Third-party libraries
+#include <dht/dht.h>
 
-#include <tcpip_adapter.h>
+// Project headers
+#include "nvs_helper.h"
+#include "wifi_manager.h"
+#include "api_handler.h"
+#include "http_manager.h"
 
 static const char *TAG = "DHT22-API";
 
-void handle_nvs_error(void) {
-    if (nvs_flash_init() != ESP_OK) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ESP_ERROR_CHECK(nvs_flash_init());
-    }
-
-    return;
-}
-
 void setup_wifi(void) {
-    ESP_LOGI(TAG, "Initializing WiFi...");
+    initialize_wifi(TAG);
 
-    wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&config));
+    set_wifi_mode_apsta(TAG);
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    set_static_ip(TAG);
 
-    tcpip_adapter_ip_info_t ip_info;
+    wifi_config_t ap_config;
+    wifi_config_t sta_config;
 
-    IP4_ADDR(&ip_info.ip,      192, 168, 101, 50);
-    IP4_ADDR(&ip_info.gw,      192, 168, 101, 1);
-    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+    configure_apsta_config(TAG, &ap_config, &sta_config);
 
-    tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+    set_apsta_config(&ap_config, &sta_config);
 
-    tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
-
-    wifi_config_t ap_config = {
-        .ap = {
-            .ssid = "ESP8266_ABAY",
-            .password = "Akbarkkmu",
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
-            .max_connection = 4,
-        }
-    };
-
-    wifi_config_t sta_config = {
-        .sta = {
-            .ssid = "Yudatachi",
-            .password = "Kevinkanigara",
-            .scan_method = WIFI_FAST_SCAN,
-        }
-    };
-
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &ap_config));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &sta_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_connect());
-
-    ESP_LOGI(TAG, "WiFi AP started. SSID: ESP8266_ABAY  Password: Akbarkkmu");
+    start_wifi(TAG);
 }
 
 esp_err_t dht_data_handler(httpd_req_t *req) {
     float humidity = 0;
     float temperature = 0;
 
-    httpd_resp_set_type(req, "application/json");
+    set_respond_type(TAG, req);
 
-    if (dht_read_float_data(DHT_TYPE_DHT22, GPIO_NUM_16, &humidity, &temperature) == ESP_OK) {
-        char response[100];
-        snprintf(response, sizeof(response), "{\"humidity\": %.2f, \"temperature\": %.2f}", humidity, temperature);
-        httpd_resp_send(req, response, -1);
-        ESP_LOGI(TAG, "Sensor data sent: Temp=%.2f°C, Humidity=%.2f%%", temperature, humidity);
-    } else {
-        const char *error_response = "{\"error\": \"Failed to read sensor\"}";
-        httpd_resp_send_500(req);
-        httpd_resp_send(req, error_response, -1);
-        ESP_LOGE(TAG, "Failed to read DHT22 sensor");
-    }
-
-    return ESP_OK;
+    handle_sensor_request(TAG, req, &humidity, &temperature);
 }
 
 void start_http_server(void) {
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    httpd_handle_t server = NULL;
+    httpd_config_t config;
+    httpd_handle_t server;
+    configure_http_server(&config, &server);
 
     ESP_LOGI(TAG, "Starting HTTP server...");
 
     if (httpd_start(&server, &config) == ESP_OK) {
-        httpd_uri_t dht_uri = {
-            .uri       = "/sensor",
-            .method    = HTTP_GET,
-            .handler   = dht_data_handler,
-            .user_ctx  = NULL
-        };
+        httpd_uri_t dht_uri;
+        configure_http_uri(TAG, &dht_uri, dht_data_handler);
+
         httpd_register_uri_handler(server, &dht_uri);
+
         ESP_LOGI(TAG, "HTTP server started. Access at http://192.168.101.50/sensor");
     } else {
         ESP_LOGE(TAG, "Failed to start HTTP server");
     }
 }
 
-void wifi_reconnect_task(void *pvParameters) {
-    while (1) {
-        wifi_ap_record_t ap_info;
 
-        if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
-            ESP_LOGW(TAG, "WiFi disconnected, attempting to reconnect...");
-            ESP_ERROR_CHECK(esp_wifi_connect());
-        }
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
-    }
-}
 
 void app_main(void) {
     ESP_LOGI(TAG, "Starting DHT22 API application...");
 
-    handle_nvs_error();
+    handle_nvs_error(TAG);
 
     ESP_LOGI(TAG, "Initializing TCP/IP adapter...");
     tcpip_adapter_init();
@@ -146,5 +89,5 @@ void app_main(void) {
 
     ESP_LOGI(TAG, "Application started successfully!");
 
-    xTaskCreate(&wifi_reconnect_task, "wifi_reconnect_task", 2048, NULL, 5, NULL);
+    xTaskCreate(&wifi_reconnect_task, "wifi_reconnect_task", 2048, (void *) TAG, 5, NULL);
 }
