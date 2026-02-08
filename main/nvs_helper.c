@@ -1,7 +1,8 @@
-#include "nvs_helper.h"
 #include <esp_log.h>
 #include <esp_err.h>
 #include <nvs_flash.h>
+
+#include "nvs_helper.h"
 
 void handle_nvs_error(const char *TAG) {
     if (nvs_flash_init() != ESP_OK) {
