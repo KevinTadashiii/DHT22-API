@@ -64,13 +64,23 @@ void start_http_server(void) {
         ESP_LOGI(TAG, "HTTP server started. Access at http://192.168.101.50/sensor");
     } else {
         ESP_LOGE(TAG, "Failed to start HTTP server");
+        esp_restart();
     }
+
+    return;
+}
+
+void setup_led(void) {
+    gpio_config_t io_conf;
+    configure_led(TAG, &io_conf, GPIO_NUM_5);
+
+    initialize_led(TAG, &io_conf, GPIO_NUM_5);
 }
 
 void app_main(void) {
     ESP_LOGI(TAG, "Starting DHT22 API application...");
 
-    initialize_led(TAG, GPIO_NUM_5);
+    setup_led();
 
     handle_nvs_error(TAG);
 
