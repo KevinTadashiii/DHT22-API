@@ -70,11 +70,15 @@ void wifi_reconnect_task(void *pvParameters) {
         wifi_ap_record_t ap_info;
 
         if (esp_wifi_sta_get_ap_info(&ap_info) != ESP_OK) {
+            turn_off_led(TAG, GPIO_NUM_5);
+
             ESP_LOGW(TAG, "WiFi disconnected, attempting to reconnect...");
             ESP_ERROR_CHECK(esp_wifi_connect());
+        } else {
+            turn_on_led(TAG, GPIO_NUM_5);
         }
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(15000));
     }
 
     return;
