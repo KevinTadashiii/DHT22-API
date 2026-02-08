@@ -17,22 +17,24 @@
 #include "wifi_manager.h"
 #include "api_handler.h"
 #include "http_manager.h"
+#include "led_handler.h"
 
 static const char *TAG = "DHT22-API";
+
+static const int ip[4] = {192, 168, 101, 50};
+static const int netmask[4] = {255, 255, 255, 0};
+static const int gateway[4] = {192, 168, 101, 1};
 
 void setup_wifi(void) {
     initialize_wifi(TAG);
 
-    set_wifi_mode_apsta(TAG);
+    set_wifi_mode_sta(TAG);
+    set_static_ip(TAG, ip, netmask, gateway);
 
-    set_static_ip(TAG);
-
-    wifi_config_t ap_config;
     wifi_config_t sta_config;
 
-    configure_apsta_config(TAG, &ap_config, &sta_config);
-
-    set_apsta_config(&ap_config, &sta_config);
+    configure_sta_config(TAG, &sta_config);
+    set_sta_config(&sta_config);
 
     start_wifi(TAG);
 }

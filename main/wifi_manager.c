@@ -11,39 +11,30 @@ void initialize_wifi(const char *TAG) {
     return;
 }
 
-void set_wifi_mode_apsta(const char *TAG) {
-    ESP_LOGI(TAG, "Setting WiFi mode to APSTA...");
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+void set_wifi_mode_sta(const char *TAG) {
+    ESP_LOGI(TAG, "Setting WiFi mode to STA...");
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
     return;
 }
 
-void set_static_ip(const char *TAG) {
+void set_static_ip(const char *TAG, const int ip[4], const int netmask[4], const int gateway[4]) {
     tcpip_adapter_ip_info_t ip_info;
 
-    IP4_ADDR(&ip_info.ip,      192, 168, 101, 50);
-    IP4_ADDR(&ip_info.gw,      192, 168, 101, 1);
-    IP4_ADDR(&ip_info.netmask, 255, 255, 255, 0);
+    IP4_ADDR(&ip_info.ip,      ip[0], ip[1], ip[2], ip[3]);
+    IP4_ADDR(&ip_info.gw,      gateway[0], gateway[1], gateway[2], gateway[3]);
+    IP4_ADDR(&ip_info.netmask, netmask[0], netmask[1], netmask[2], netmask[3]);
 
     tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
 
     tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
 
-    ESP_LOGI(TAG, "Static IP set to 192.168.101.50");
+    ESP_LOGI(TAG, "Static IP set to %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 
     return;
 }
 
-void configure_apsta_config(const char *TAG, wifi_config_t *ap_config, wifi_config_t *sta_config) {
-    *ap_config = (wifi_config_t){
-        .ap = {
-            .ssid = "ESP8266_ABAY",
-            .password = "Akbarkkmu",
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
-            .max_connection = 4,
-        }
-    };
-
+void configure_sta_config(const char *TAG, wifi_config_t *sta_config) {
     *sta_config = (wifi_config_t){
         .sta = {
             .ssid = "Yudatachi",
@@ -55,8 +46,7 @@ void configure_apsta_config(const char *TAG, wifi_config_t *ap_config, wifi_conf
     return;
 }
 
-void set_apsta_config(wifi_config_t *ap_config, wifi_config_t *sta_config) {
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, ap_config));
+void set_sta_config(wifi_config_t *sta_config) {
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, sta_config));
 
     return;
@@ -66,7 +56,7 @@ void start_wifi(const char *TAG) {
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_connect());
 
-    ESP_LOGI(TAG, "WiFi AP started. SSID: ESP8266_ABAY  Password: Akbarkkmu");
+    ESP_LOGI(TAG, "WiFi STA started.");
 
     return;
 }
