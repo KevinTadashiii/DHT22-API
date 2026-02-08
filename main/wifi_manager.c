@@ -2,6 +2,8 @@
 #include <esp_log.h>
 #include <tcpip_adapter.h>
 
+#include "led_handler.h"
+
 void initialize_wifi(const char *TAG) {
     ESP_LOGI(TAG, "Initializing WiFi...");
 

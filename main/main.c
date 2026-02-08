@@ -45,13 +45,13 @@ esp_err_t dht_data_handler(httpd_req_t *req) {
 
     set_respond_type(TAG, req);
 
-    handle_sensor_request(TAG, req, &humidity, &temperature);
+    return handle_sensor_request(TAG, req, &humidity, &temperature);
 }
 
 void start_http_server(void) {
     httpd_config_t config;
     httpd_handle_t server;
-    configure_http_server(&config, &server);
+    configure_http_server(TAG, &config, &server);
 
     ESP_LOGI(TAG, "Starting HTTP server...");
 
@@ -67,16 +67,17 @@ void start_http_server(void) {
     }
 }
 
-
-
 void app_main(void) {
     ESP_LOGI(TAG, "Starting DHT22 API application...");
+
+    initialize_led(TAG, GPIO_NUM_5);
 
     handle_nvs_error(TAG);
 
     ESP_LOGI(TAG, "Initializing TCP/IP adapter...");
     tcpip_adapter_init();
 
+    // This is required before initializing WiFi to handle connection events
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     ESP_LOGI(TAG, "Initializing DHT22 sensor on GPIO 16...");
@@ -90,6 +91,9 @@ void app_main(void) {
     start_http_server();
 
     ESP_LOGI(TAG, "Application started successfully!");
+
+    // to indicate application is running and wifi is connected
+    turn_on_led(TAG, GPIO_NUM_5);
 
     xTaskCreate(&wifi_reconnect_task, "wifi_reconnect_task", 2048, (void *) TAG, 5, NULL);
 }
